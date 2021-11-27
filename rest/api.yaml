@@ -14,8 +14,8 @@
     - url: 'https://dev.albertinventdev.com'
       description: Dev server
   tags:
-    - name: DOE
-      description: Methods covering E2E functionality for DOE. 
+    - name: Calculation
+      description:  Methods to perform calculation operations among Albert Modules
     
   paths:
     /api/v3/calculations/health:
@@ -30,8 +30,52 @@
             content: 
               application/json:
                 schema:
-                  $ref: '#/components/schemas/Health'
-      
+                  $ref: '#/components/schemas/Health'    
+    /api/v3/calculations/formulacost:
+      post:
+        summary: Calculate total cost of formula utilizing raw material composition.
+        description: Calculate total cost of formula using percentage of raw materials used.
+        operationId: getFormulaCost
+        tags:
+        - FormulaCost
+        requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormulaCost"
+              examples: # Child of media type
+                FormulaCost: # Example 1
+                  value:
+                    locationId: LOC300
+                    Inventories: 
+                     - id: INVA20
+                       percentage: 30
+                     - id: INVA40
+                       percentage: 20  
+        responses:
+          201:
+            description: Success
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/FormulaCost"
+                examples:
+                  Success:
+                    value:
+                      totalCost: 350
+                      currency: USD
+          400:
+            $ref: "#/components/responses/BadRequest"
+          401:
+            $ref: "#/components/responses/Unauthorized"
+          403:
+            $ref: "#/components/responses/Forbidden"
+          404:
+            $ref: "#/components/responses/NotFound"
+          500:
+            $ref: "#/components/responses/InternalServerError"
+        security:
+          - jwt: []                    
   components:
     responses:
       NoContent:
@@ -49,13 +93,13 @@
                 value:
                   type: error
                   uuid : 2b367990-f6a1-11eb-a203-cf21c3236629
-                  method : POST|PATCH|GET|DELETE
-                  url : /api/v3/doe
+                  method : POST
+                  url : /api/v3/calculations/formulacost
                   status: 400
                   title: Bad Request
                   category : AUTOVALIDATION
                   errors:
-                    - msg: should NOT be shorter than 1 characters
+                    - msg: Inventory Id should not be less than 5 characters
                       label : name
                       type : body
       Unauthorized:
@@ -70,7 +114,7 @@
                   type: error
                   uuid : 2b367990-f6a1-11eb-a203-cf21c3236629
                   method : POST|PATCH|GET|DELETE
-                  url : /api/v3/doe
+                  url : /api/v3/calculations/formulacost
                   status: 401
                   title: Unauthorized
                   category : AUTOVALIDATION
@@ -88,7 +132,7 @@
                   type: error
                   uuid : 2b367990-f6a1-11eb-a203-cf21c3236629
                   method : POST|PATCH|GET|DELETE
-                  url : /api/v3/doe
+                  url : /api/v3/calculations/formulacost
                   status: 403
                   title: Forbidden
                   category : AUTOVALIDATION
@@ -108,12 +152,12 @@
                   type: error
                   uuid : 2b367990-f6a1-11eb-a203-cf21c3236629
                   method : POST|PATCH|GET|DELETE
-                  url : /api/v3/doe
+                  url : /api/v3/calculations/formulacost
                   status: 404
                   title: Not Found
                   category : AUTOVALIDATION
                   errors:
-                    - msg: No records found
+                    - msg: Pricing value unavailable for given Inventory
                       label : id
                       type : body
       InternalServerError:
@@ -127,8 +171,8 @@
                 value:
                   type: error
                   uuid : 2b367990-f6a1-11eb-a203-cf21c3236629
-                  method : POST|PATCH|GET|DELETE
-                  url : /api/v3/doe
+                  method : POST
+                  url : /api/v3/calculations/formulacost
                   status: 500
                   title: Internal Server Error
                   category : AUTOVALIDATION
@@ -146,6 +190,34 @@
         required:
           - status
           - ts
+      FormulaCost:
+        properties:
+          locationId:
+            type: string
+            description: Location Id on where the pricing is to be calculated
+            writeOnly: true
+          Inventories:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Inventory id
+                  minLength: 5
+                  pattern: '^INV'
+                percentage:
+                  type: number
+              writeOnly: true
+          calculatedCost:
+            type: number
+            description: calculated value of Cost of Inventories utilized
+            readOnly: true
+          currency:
+            type: string
+            description: Currency type of the cost value.
+            readOnly: true               
+
       Error:
         type: object
         properties:
@@ -166,10 +238,6 @@
             description : Method which returned error.
             enum : 
               - POST
-              - PATCH
-              - PUT
-              - GET
-              - DELETE
           status:
             type: integer
             description: HTTP statusCode

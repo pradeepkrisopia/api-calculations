@@ -1,5 +1,8 @@
 # Overview
 
+The apis exposed through this calculation service will just read from dynamodb / perform certain required calculations on it and send output to the calling environment. This repo will contain apis for general business calculations. For instance, the first script is getFormulaCost which takes in a list of raw material ids with their percentage of composition in a formula and a location id through which the total cost of formula is calculated by getting pricing values from dynamodb.
+
+
 
 # Contract
 
